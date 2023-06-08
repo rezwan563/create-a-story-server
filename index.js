@@ -32,9 +32,26 @@ async function run() {
     // Connect the client to the server	(optional starting in v4.7)
     // await client.connect();
 
+    // For homepage class section(limit to 6 and sorted)
     app.get('/classes', async(req,res)=>{
-        const result = await classCollection.find().toArray()
+        const result = await classCollection.find().sort({enrolledStudents: -1}).limit(6).toArray()
         res.send(result)
+    })
+
+    // For homepage instructor section(limit to 6)
+    app.get('/instructors', async(req, res)=>{
+        const result = await instructorCollection.find().limit(6).toArray()
+        res.send(result)
+    })
+    // For instructors page 
+    app.get('/allinstructors', async(req, res)=>{
+        const result = await instructorCollection.find().toArray()
+        res.send()
+    })
+    // For classes page
+    app.get('/allclasses', async(req, res)=>{
+        const result = await instructorCollection.find().toArray()
+        res.send()
     })
 
     
