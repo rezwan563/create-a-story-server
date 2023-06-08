@@ -24,12 +24,20 @@ const client = new MongoClient(uri, {
   }
 });
 
+const classCollection = client.db('photographyDB').collection('classes')
+const instructorCollection = client.db('photographyDB').collection('instructors')
+
 async function run() {
   try {
     // Connect the client to the server	(optional starting in v4.7)
     // await client.connect();
 
+    app.get('/classes', async(req,res)=>{
+        const result = await classCollection.find().toArray()
+        res.send(result)
+    })
 
+    
 
 
 
