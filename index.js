@@ -73,15 +73,7 @@ async function run() {
     // TODO: no email, no query, no if
     // For classes page
     app.get('/all_classes', async(req, res)=>{
-        // const email = req.query.email;
-        // if(!email){
-        //     return res.send([])
-        // }
-        // const decodedEmail = req.decoded.email
-        // if(decodedEmail !== email){
-        //     return res.status(403).send({error: true, message: 'forbidden access'})
-        // }
-        // const query = {email: email};
+       
         const result = await classCollection.find().toArray()
         res.send(result)
     })
@@ -93,6 +85,7 @@ async function run() {
     })
 
     // Selected Classes
+    // TODO: verifytJWT, decoded uncomment
     app.get('/select_classes', verifyJWT, async(req,res)=>{
         const email = req.query.email;
 
@@ -104,7 +97,16 @@ async function run() {
             return res.status(403).send({error: true, message: 'forbidden access'})
         }
         const query = {email: email}
-        const result = await classCollection.find(query).toArray()
+        const result = await selectClassCollection.find(query).toArray()
+        res.send(result)
+    })
+
+    // delete class for student dashboard
+    app.delete('/select_classes/:id', async(req,res)=>{
+        const id = req.params.id;
+        console.log("Delete", id)
+        const query = {_id: new ObjectId(id)}
+        const result = await selectClassCollection.deleteOne(query)
         res.send(result)
     })
 
