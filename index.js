@@ -10,7 +10,20 @@ app.use(cors())
 app.use(express.json())
 //----middlewares-----
 
-
+const verifyJWT = (req, res, next) =>{
+    const authorization = req.headers.authorization;
+    if(!authorization){
+        return res.status(401).send({error: true, message:'unauthorized access'})
+    }
+    const token = authorization.split(' ')[1];
+    jwt.verify(token, process.env.ACCESS_TOKEN_SECRET, (err, decoded)=>{
+        if(err){
+            return res.status(401).send({error: true, message:'unauthorized access'})
+        }
+        req.decoded = decoded;
+        next();
+    })
+}
 
 
 const { MongoClient, ServerApiVersion, ObjectId } = require('mongodb');
@@ -38,7 +51,7 @@ async function run() {
     app.post('/jwt', (req,res)=>{
         const user = req.body;
         const token = jwt.sign(user, process.env.ACCESS_TOKEN_SECRET, {expiresIn: '1h'})
-        res.send(token)
+        res.send({token})
     })
   // For homepage class section(limit to 6 and sorted)
     app.get('/classes', async(req,res)=>{
@@ -57,7 +70,17 @@ async function run() {
         res.send(result)
     })
     // For classes page
+    // TODO: no email, no query, no if
     app.get('/all_classes', async(req, res)=>{
+        // const email = req.query.email;
+        // if(!email){
+        //     return res.send([])
+        // }
+        // const decodedEmail = req.decoded.email
+        // if(decodedEmail !== email){
+        //     return res.status(403).send({error: true, message: 'forbidden access'})
+        // }
+        // const query = {email: email};
         const result = await classCollection.find().toArray()
         res.send(result)
     })
