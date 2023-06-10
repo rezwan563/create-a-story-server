@@ -39,6 +39,7 @@ const client = new MongoClient(uri, {
 });
 
 const classCollection = client.db('photographyDB').collection('classes')
+const selectClassCollection = client.db('photographyDB').collection('selected')
 const instructorCollection = client.db('photographyDB').collection('instructors')
 const userCollection = client.db('photographyDB').collection('users')
 
@@ -69,8 +70,8 @@ async function run() {
         const result = await instructorCollection.find().toArray()
         res.send(result)
     })
-    // For classes page
     // TODO: no email, no query, no if
+    // For classes page
     app.get('/all_classes', async(req, res)=>{
         // const email = req.query.email;
         // if(!email){
@@ -82,6 +83,28 @@ async function run() {
         // }
         // const query = {email: email};
         const result = await classCollection.find().toArray()
+        res.send(result)
+    })
+    // Selected Classes post
+    app.post('/select_classes', async(req,res)=>{
+        const selectedClass = req.body;
+        const result = await selectClassCollection.insertOne(selectedClass)
+        res.send(result)
+    })
+
+    // Selected Classes
+    app.get('/select_classes', verifyJWT, async(req,res)=>{
+        const email = req.query.email;
+
+        if(!email){
+            res.send([]);
+        }
+        const decodeEmail = req.decoded.email;
+        if(email !== decodeEmail){
+            return res.status(403).send({error: true, message: 'forbidden access'})
+        }
+        const query = {email: email}
+        const result = await classCollection.find(query).toArray()
         res.send(result)
     })
 
