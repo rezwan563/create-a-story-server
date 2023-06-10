@@ -26,6 +26,7 @@ const client = new MongoClient(uri, {
 
 const classCollection = client.db('photographyDB').collection('classes')
 const instructorCollection = client.db('photographyDB').collection('instructors')
+const userCollection = client.db('photographyDB').collection('users')
 
 async function run() {
   try {
@@ -44,14 +45,33 @@ async function run() {
         res.send(result)
     })
     // For instructors page 
-    app.get('/allinstructors', async(req, res)=>{
+    app.get('/all_instructors', async(req, res)=>{
         const result = await instructorCollection.find().toArray()
-        res.send()
+        res.send(result)
     })
     // For classes page
-    app.get('/allclasses', async(req, res)=>{
-        const result = await instructorCollection.find().toArray()
-        res.send()
+    app.get('/all_classes', async(req, res)=>{
+        const result = await classCollection.find().toArray()
+        res.send(result)
+    })
+
+    // Get all users
+    app.get('/users', async(req,res)=>{
+        const result = await userCollection.find().toArray()
+        res.send(result)
+    })
+
+    // Save new user data on server
+    app.post('/users', async(req,res) =>{
+        const user = req.body
+        const query = {email: user.email}
+        const existingUser = await userCollection.findOne(query)
+        console.log(existingUser);
+        if(existingUser){
+            return res.send({message: 'User already exist'})
+        }
+        const result = await userCollection.insertOne(user)
+        res.send(result)
     })
 
     
