@@ -1,5 +1,6 @@
 const express = require('express');
 const cors = require('cors');
+const jwt = require('jsonwebtoken');
 require('dotenv').config()
 const app = express()
 const port = process.env.PORT || 5000;
@@ -33,7 +34,13 @@ async function run() {
     // Connect the client to the server	(optional starting in v4.7)
     // await client.connect();
 
-    // For homepage class section(limit to 6 and sorted)
+  
+    app.post('/jwt', (req,res)=>{
+        const user = req.body;
+        const token = jwt.sign(user, process.env.ACCESS_TOKEN_SECRET, {expiresIn: '1h'})
+        res.send(token)
+    })
+  // For homepage class section(limit to 6 and sorted)
     app.get('/classes', async(req,res)=>{
         const result = await classCollection.find().sort({enrolledStudents: -1}).limit(6).toArray()
         res.send(result)
