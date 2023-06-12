@@ -1,6 +1,8 @@
 const express = require("express");
 const cors = require("cors");
 const jwt = require("jsonwebtoken");
+const SSLCommerzPayment = require('sslcommerz-lts')
+
 require("dotenv").config();
 const app = express();
 const port = process.env.PORT || 5000;
@@ -41,12 +43,16 @@ const client = new MongoClient(uri, {
   },
 });
 
+const store_id = process.env.STORE_ID
+const store_passwd = process.env.STORE_PASS
+const is_live = false //true for live, false for sandbox
 const classCollection = client.db("photographyDB").collection("classes");
 const selectClassCollection = client.db("photographyDB").collection("selected");
 const instructorCollection = client
   .db("photographyDB")
   .collection("instructors");
 const userCollection = client.db("photographyDB").collection("users");
+const orderCollection = client.db("photographyDB").collection("orders");
 
 async function run() {
   try {
@@ -142,6 +148,66 @@ async function run() {
       res.send(result);
     });
 
+    // payment
+    const tran_id = new ObjectId().toString()
+    app.post('/orders', async(req, res)=>{
+      
+      const {studentName, studentEmail, courseName, coursePrice, courseInstrunctor} = req.body;
+      const data = {
+        total_amount: coursePrice,
+        currency: 'BDT',
+        tran_id: tran_id, // use unique tran_id for each api call
+        success_url: `http://localhost:5000/payment/success/${tran_id}`,
+        fail_url: 'http://localhost:3030/fail',
+        cancel_url: 'http://localhost:3030/cancel',
+        ipn_url: 'http://localhost:3030/ipn',
+        shipping_method: 'Courier',
+        product_name: 'Computer.',
+        product_category: 'Electronic',
+        product_profile: 'general',
+        cus_name: studentName,
+        cus_email: studentEmail,
+        cus_add1: 'Dhaka',
+        cus_add2: 'Dhaka',
+        cus_city: 'Dhaka',
+        cus_state: 'Dhaka',
+        cus_postcode: '1000',
+        cus_country: 'Bangladesh',
+        cus_phone: '01711111111',
+        cus_fax: '01711111111',
+        ship_name: 'Customer Name',
+        ship_add1: 'Dhaka',
+        ship_add2: 'Dhaka',
+        ship_city: 'Dhaka',
+        ship_state: 'Dhaka',
+        ship_postcode: 1000,
+        ship_country: 'Bangladesh',
+    };
+    console.log(data);
+    const sslcz = new SSLCommerzPayment(store_id, store_passwd, is_live)
+    sslcz.init(data).then(apiResponse => {
+        // Redirect the user to payment gateway
+        let GatewayPageURL = apiResponse.GatewayPageURL
+        res.send({url:GatewayPageURL})
+        const finalOrder = {courseName, studentEmail, studentName, paidStatus: false, courseInstrunctor, transectionId: tran_id}
+
+        const result =  orderCollection.insertOne(finalOrder)
+        console.log('Redirecting to: ', GatewayPageURL)
+    });
+
+    app.post('/payment/success/:tranId', async(req,res)=>{
+      console.log(req.params.tranId)
+      const result = await orderCollection.updateOne({transectionId: req.params.tranId} ,{
+      $set:{
+        paidStatus: true,
+      }
+    })
+    if(result.modifiedCount > 0){
+      res.redirect(`http://localhost:5173/payment/success/${req.params.tranId}`)
+    }
+    })
+    })
+
     // delete class for student dashboard
     app.delete("/select_classes/:id", async (req, res) => {
       const id = req.params.id;
@@ -161,7 +227,6 @@ async function run() {
       const user = req.body;
       const query = { email: user.email };
       const existingUser = await userCollection.findOne(query);
-      console.log(existingUser);
       if (existingUser) {
         return res.send({ message: "User already exist" });
       }
@@ -184,7 +249,6 @@ async function run() {
     // Is instructor logged in
     app.get("/users/instructor/:email", verifyJWT, async (req, res) => {
       const email = req.params.email;
-      console.log(email)
       if (req.decoded.email !== email) {
         res.send({ instructor: false });
       }
@@ -196,7 +260,6 @@ async function run() {
     // Is student logged in
     app.get("/users/student/:email", verifyJWT, async (req, res) => {
       const email = req.params.email;
-      console.log(email)
       if (req.decoded.email !== email) {
         res.send({ instructor: false });
       }
