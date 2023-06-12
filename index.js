@@ -125,7 +125,7 @@ async function run() {
           .status(403)
           .send({ error: true, message: "forbidden access" });
       }
-      const query = { email: email };
+      const query = { email: email, paidStatus: false };
       const result = await selectClassCollection.find(query).toArray();
       res.send(result);
     });
@@ -194,7 +194,7 @@ async function run() {
         const result =  orderCollection.insertOne(finalOrder)
         console.log('Redirecting to: ', GatewayPageURL)
     });
-
+// log: changed post to patch and ordercollection to selectedcollection
     app.post('/payment/success/:tranId', async(req,res)=>{
       const result = await orderCollection.updateOne({transectionId: req.params.tranId} ,{
       $set:{
@@ -202,6 +202,7 @@ async function run() {
       }
     })
     if(result.modifiedCount > 0){
+      // log: created patch
      
       res.redirect(`http://localhost:5173/payment/success/${req.params.tranId}`)
     }
@@ -215,6 +216,25 @@ async function run() {
       const result = await selectClassCollection.deleteOne(query);
       res.send(result);
     });
+
+    app.get('/enroll_classes', verifyJWT, async(req,res)=>{
+      const email = req.query.email;
+
+      if (!email) {
+        res.send([]);
+      }
+      const decodeEmail = req.decoded.email;
+      if (email !== decodeEmail) {
+        return res
+          .status(403)
+          .send({ error: true, message: "forbidden access" });
+      }
+      const query = { studentEmail: email };
+      const result = await orderCollection.find(query).toArray();
+      console.log(result);
+      console.log(result);
+      res.send(result);
+    })
 
     // Get all users
     app.get("/users", verifyJWT, async (req, res) => {
