@@ -152,7 +152,7 @@ async function run() {
     const tran_id = new ObjectId().toString()
     app.post('/orders', async(req, res)=>{
       
-      const {studentName, studentEmail, courseName, coursePrice, courseInstrunctor} = req.body;
+      const {classId, studentName, studentEmail, courseName, coursePrice, courseInstrunctor} = req.body;
       const data = {
         total_amount: coursePrice,
         currency: 'BDT',
@@ -196,13 +196,13 @@ async function run() {
     });
 
     app.post('/payment/success/:tranId', async(req,res)=>{
-      console.log(req.params.tranId)
       const result = await orderCollection.updateOne({transectionId: req.params.tranId} ,{
       $set:{
         paidStatus: true,
       }
     })
     if(result.modifiedCount > 0){
+     
       res.redirect(`http://localhost:5173/payment/success/${req.params.tranId}`)
     }
     })
